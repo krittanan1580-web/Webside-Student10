@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>MoodTune – เพลงที่ใช่สำหรับคุณ</title>
+    <style>
+        :root {
+            --bg: #f6f4fb;
+            --card: #fff;
+            --tx: #1d1b2e;
+            --mu: #6b6880;
+            --ac: #7c4dff;
+            --ac2: #ff5c8a;
+            --bd: #e4e0f0;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px)
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #14121f;
+                --card: #1f1c30;
+                --tx: #f0eefb;
+                --mu: #a29fba;
+                --bd: #322e4a
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #14121f;
+            --card: #1f1c30;
+            --tx: #f0eefb;
+            --mu: #a29fba;
+            --bd: #322e4a
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--tx);
+            font-family: "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+            line-height: 1.5
+        }
+
+        .wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin: .2em 0;
+            background: linear-gradient(90deg, var(--ac), var(--ac2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent
+        }
+
+        h2 {
+            font-size: 1.15rem;
+            margin: 0 0 10px
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px
+        }
+
+        input,
+        select,
+        button {
+            font: inherit;
+            color: var(--tx)
+        }
+
+        input[type=text],
+        input[type=password],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            margin: 4px 0 10px
+        }
+
+        button {
+            cursor: pointer;
+            border: 0;
+            border-radius: 10px;
+            padding: 9px 14px;
+            background: var(--ac);
+            color: #fff
+        }
+
+        button.ghost {
+            background: transparent;
+            border: 1px solid var(--bd);
+            color: var(--tx)
+        }
+
+        button.sm {
+            padding: 5px 10px;
+            font-size: .85rem
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px
+        }
+
+        .chip {
+            padding: 6px 12px;
+            border-radius: 99px;
+            border: 1px solid var(--bd);
+            background: var(--bg);
+            cursor: pointer;
+            user-select: none
+        }
+
+        .chip.on {
+            background: var(--ac);
+            border-color: var(--ac);
+            color: #fff
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .song {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+            border-top: 1px solid var(--bd);
+            flex-wrap: wrap
+        }
+
+        .song:first-of-type {
+            border-top: 0
+        }
+
+        .song b {
+            display: block
+        }
+
+        .song small {
+            color: var(--mu)
+        }
+
+        .acts {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center
+        }
+
+        .tag {
+            font-size: .75rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: var(--bd);
+            color: var(--mu)
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            overflow-x: auto
+        }
+
+        .tabs button {
+            background: var(--card);
+            color: var(--tx);
+            border: 1px solid var(--bd)
+        }
+
+        .tabs button.on {
+            background: var(--ac);
+            color: #fff;
+            border-color: var(--ac)
+        }
+
+        .bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--ac), var(--ac2));
+            margin-top: 4px
+        }
+
+        .err {
+            color: #e5484d;
+            font-size: .9rem;
+            min-height: 1.2em
+        }
+
+        .hide {
+            display: none
+        }
+
+        .mu {
+            color: var(--mu)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap" id="app"></div>
+    <script>
+        /* ====== ข้อมูลเพลงตัวอย่าง (แก้ไข/เพิ่มได้เอง) ====== */
+        const MOODS = { happy: "😄 สนุกสดใส", chill: "😌 ผ่อนคลาย", sad: "😢 เศร้า/อิน", energy: "🔥 มันส์/ฮึกเหิม", love: "💕 โรแมนติก", focus: "📚 โฟกัส/อ่านหนังสือ", dark: "🌑 ดาร์ก/เท่" };
+        const GENRES = { pop: "Pop", rock: "Rock", hiphop: "Hip-hop", kpop: "K-pop", classic: "Classical/Instrumental", thai: "เพลงไทย" };
+        const SONGS = [
+            { id: 1, t: "Happy", a: "Pharrell Williams", m: ["happy", "energy"], g: "pop", e: 4 },
+            { id: 2, t: "Dynamite", a: "BTS", m: ["happy", "energy"], g: "kpop", e: 5 },
+            { id: 3, t: "How You Like That", a: "BLACKPINK", m: ["energy", "dark"], g: "kpop", e: 5 },
+            { id: 4, t: "Levitating", a: "Dua Lipa", m: ["happy", "energy"], g: "pop", e: 4 },
+            { id: 5, t: "Shake It Off", a: "Taylor Swift", m: ["happy"], g: "pop", e: 4 },
+            { id: 6, t: "Blinding Lights", a: "The Weeknd", m: ["energy", "dark"], g: "pop", e: 4 },
+            { id: 7, t: "bad guy", a: "Billie Eilish", m: ["dark", "energy"], g: "pop", e: 3 },
+            { id: 8, t: "Fix You", a: "Coldplay", m: ["sad", "chill"], g: "rock", e: 2 },
+            { id: 9, t: "Someone Like You", a: "Adele", m: ["sad"], g: "pop", e: 1 },
+            { id: 10, t: "Someone You Loved", a: "Lewis Capaldi", m: ["sad"], g: "pop", e: 2 },
+            { id: 11, t: "drivers license", a: "Olivia Rodrigo", m: ["sad"], g: "pop", e: 2 },
+            { id: 12, t: "Perfect", a: "Ed Sheeran", m: ["love", "chill"], g: "pop", e: 2 },
+            { id: 13, t: "Just the Way You Are", a: "Bruno Mars", m: ["love", "happy"], g: "pop", e: 3 },
+            { id: 14, t: "Don't Stop Me Now", a: "Queen", m: ["happy", "energy"], g: "rock", e: 5 },
+            { id: 15, t: "Believer", a: "Imagine Dragons", m: ["energy", "dark"], g: "rock", e: 5 },
+            { id: 16, t: "Creep", a: "Radiohead", m: ["sad", "dark"], g: "rock", e: 3 },
+            { id: 17, t: "Lose Yourself", a: "Eminem", m: ["energy", "focus"], g: "hiphop", e: 5 },
+            { id: 18, t: "What a Wonderful World", a: "Louis Armstrong", m: ["chill", "happy"], g: "classic", e: 1 },
+            { id: 19, t: "Clair de Lune", a: "Debussy", m: ["chill", "focus"], g: "classic", e: 1 },
+            { id: 20, t: "One Summer's Day", a: "Joe Hisaishi", m: ["chill", "focus"], g: "classic", e: 1 },
+            { id: 21, t: "ยอม", a: "Bodyslam", m: ["sad", "love"], g: "thai", e: 3 },
+            { id: 22, t: "Glimpse of Us", a: "Joji", m: ["sad", "love"], g: "pop", e: 2 }
+        ];
+        const byId = id => SONGS.find(s => s.id === id);
+
+        /* ====== เก็บข้อมูลใน localStorage (ผูกกับเบราว์เซอร์นี้เท่านั้น) ====== */
+        const DB = "moodtune:users", CUR = "moodtune:current";
+        function load(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d } catch (e) { return d } }
+        function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) { } }
+        let users = load(DB, {}), current = load(CUR, null), tab = "rec", msg = "";
+        async function hash(s) { try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("") } catch (e) { return btoa(unescape(encodeURIComponent(s))) } }
+        const me = () => users[current];
+        const persist = () => save(DB, users);
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+        /* ====== ระบบแนะนำเพลง ====== */
+        function score(s, u) {
+            const p = u.profile; let sc = 0;
+            s.m.forEach(m => { if (p.moods.includes(m)) sc += 3 });
+            if (p.genres.includes(s.g)) sc += 2;
+            sc += 2 - Math.abs(s.e - p.energy) * 0.5;
+            // เรียนรู้จากประวัติการฟัง
+            const plays = u.plays, tm = {}, tg = {}; let tot = 0;
+            Object.entries(plays).forEach(([id, n]) => { const x = byId(+id); if (!x) return; tot += n; x.m.forEach(m => tm[m] = (tm[m] || 0) + n); tg[x.g] = (tg[x.g] || 0) + n });
+            if (tot) { s.m.forEach(m => sc += 2 * (tm[m] || 0) / tot); sc += 2 * (tg[s.g] || 0) / tot }
+            if (plays[s.id]) sc -= 0.5; // ดันเพลงใหม่ ๆ ขึ้นมาก่อนเล็กน้อย
+            return sc;
+        }
+        function recommend(u) { return SONGS.map(s => ({ s, sc: score(s, u) })).sort((a, b) => b.sc - a.sc).slice(0, 8).map(x => x.s) }
+
+        /* ====== Actions ====== */
+        /* ====== ตั้งค่าล็อกอิน: ใส่ค่าของคุณที่นี่ ====== */
+        const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+        const FACEBOOK_APP_ID = "YOUR_FACEBOOK_APP_ID";
+        const isFile = location.protocol === "file:";
+        const gOK = !isFile && !GOOGLE_CLIENT_ID.startsWith("YOUR_"), fOK = !isFile && !FACEBOOK_APP_ID.startsWith("YOUR_");
+        const OUT = "moodtune:loggedout"; let gReady = false, gPrompted = false;
+
+        function signIn(key, name, pic) {
+            if (!users[key]) users[key] = { name, pic, profile: null, plays: {}, playlists: { "เพลย์ลิสต์ของฉัน": [] } };
+            else { users[key].name = name; users[key].pic = pic }
+            persist(); current = key; save(CUR, key); save(OUT, false); msg = "";
+            tab = users[key].profile ? "rec" : "q"; render();
+        }
+        function localLogin() {
+            const n = document.getElementById("ln").value.trim();
+            if (!n) { msg = "กรอกชื่อก่อนนะ"; return render() }
+            signIn("local:" + n.toLowerCase(), n, "");
+        }
+        /* --- Google --- */
+        function parseJwt(t) { const b = t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(decodeURIComponent(escape(atob(b)))) }
+        function onGoogle(r) { try { const p = parseJwt(r.credential); signIn("google:" + p.sub, p.name || p.email, p.picture || "") } catch (e) { msg = "Google login ไม่สำเร็จ"; render() } }
+        function initGoogle() {
+            if (!gOK || !window.google || !google.accounts) return;
+            google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogle, auto_select: true });
+            gReady = true; drawG();
+        }
+        function drawG() {
+            if (!gReady || current) return;
+            const el = document.getElementById("gbtn");
+            if (el) google.accounts.id.renderButton(el, { theme: "outline", size: "large", width: 280, locale: "th" });
+            if (!gPrompted && !load(OUT, false)) { gPrompted = true; google.accounts.id.prompt() }
+        }
+        /* --- Facebook --- */
+        window.fbAsyncInit = function () {
+            if (!fOK) return;
+            FB.init({ appId: FACEBOOK_APP_ID, cookie: true, xfbml: false, version: "v19.0" });
+            if (!current && !load(OUT, false)) FB.getLoginStatus(r => { if (r.status === "connected") fbProfile() });
+        };
+        function fbLogin() {
+            if (!fOK || !window.FB) { msg = "ยังไม่ได้ตั้งค่า Facebook App ID (หรือยังโหลด SDK ไม่เสร็จ)"; return render() }
+            FB.login(r => { if (r.authResponse) fbProfile() }, { scope: "public_profile" });
+        }
+        function fbProfile() {
+            FB.api("/me", { fields: "name,picture" }, p => {
+                if (p && !p.error) signIn("facebook:" + p.id, p.name, (p.picture && p.picture.data && p.picture.data.url) || "");
+            });
+        }
+        function logout() {
+            current = null; save(CUR, null); save(OUT, true);
+            try { if (window.google && google.accounts) google.accounts.id.disableAutoSelect() } catch (e) { }
+            render();
+        }
+        function saveProfile() {
+            const moods = [...document.querySelectorAll("[data-m].on")].map(e => e.dataset.m);
+            const genres = [...document.querySelectorAll("[data-g].on")].map(e => e.dataset.g);
+            if (!moods.length) { msg = "เลือกอารมณ์อย่างน้อย 1 อย่าง"; return render() }
+            me().profile = { moods, genres, energy: +document.getElementById("en").value };
+            persist(); msg = ""; tab = "rec"; render();
+        }
+        function play(id) {
+            const s = byId(id), u = me(); u.plays[id] = (u.plays[id] || 0) + 1; persist();
+            window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(s.t + " " + s.a), "_blank", "noopener");
+            render();
+        }
+        function addTo(id) {
+            const sel = document.getElementById("pl-" + id).value, u = me();
+            if (!u.playlists[sel].includes(id)) { u.playlists[sel].push(id); persist() }
+            render();
+        }
+        function newPl() {
+            const n = document.getElementById("npl").value.trim(), u = me();
+            if (n && !u.playlists[n]) { u.playlists[n] = []; persist() } render();
+        }
+        function rmFrom(pl, id) { const u = me(); u.playlists[pl] = u.playlists[pl].filter(x => x !== id); persist(); render() }
+        function delPl(pl) { const u = me(); if (Object.keys(u.playlists).length > 1) { delete u.playlists[pl]; persist() } render() }
+        function move(pl, i, d) { const a = me().playlists[pl], j = i + d; if (j < 0 || j >= a.length) return;[a[i], a[j]] = [a[j], a[i]]; persist(); render() }
+        function toggle(el) { el.classList.toggle("on") }
+        function setTab(t) { tab = t; render() }
+
+        /* ====== Views ====== */
+        function songRow(s, extra = "") {
+            const u = me(), pls = Object.keys(u.playlists);
+            return `<div class="song"><div><b>${esc(s.t)}</b><small>${esc(s.a)}</small>
+  <div>${s.m.map(m => `<span class="tag">${MOODS[m]}</span>`).join(" ")} <span class="tag">${GENRES[s.g]}</span></div></div>
+  <div class="acts">${extra || `<button class="sm" onclick="play(${s.id})">▶ ฟัง</button>
+  <select class="sm" id="pl-${s.id}" style="width:auto;margin:0">${pls.map(p => `<option>${esc(p)}</option>`).join("")}</select>
+  <button class="sm ghost" onclick="addTo(${s.id})">+ เพิ่ม</button>`}</div></div>`;
+        }
+        function loginView() {
+            const head = `<h1>🎧 MoodTune</h1><p class="mu">เพลงที่ใช่ ตามนิสัยและอารมณ์ของคุณ</p>`;
+            const social = isFile ? "" : `<div id="gbtn" style="display:flex;justify-content:center;margin:12px 0;min-height:44px">${gOK ? "" : '<button class="ghost" disabled>Google (ยังไม่ได้ใส่ Client ID)</button>'}</div>
+  <button onclick="fbLogin()" style="background:#1877f2;width:280px;max-width:100%">เข้าสู่ระบบด้วย Facebook</button>
+  <p class="mu" style="margin:14px 0 6px">หรือ</p>`;
+            return `<div class="card" style="max-width:420px;margin:40px auto;text-align:center">${head}${social}
+  <input type="text" id="ln" placeholder="ใส่ชื่อของคุณ" onkeydown="if(event.key==='Enter')localLogin()" style="text-align:center">
+  <div class="err">${esc(msg)}</div><button onclick="localLogin()">เข้าใช้งานด้วยชื่อ</button>
+  <p class="mu" style="font-size:.8rem;margin-top:14px">ระบบจะจำการล็อกอินไว้ในเบราว์เซอร์นี้ ครั้งหน้าเข้ามาแล้วจะเข้าให้อัตโนมัติ</p></div>`;
+        }
+        function quizView() {
+            const p = me().profile || { moods: [], genres: [], energy: 3 };
+            return `<div class="card"><h2>บอกรสนิยมของคุณ</h2>
+  <p class="mu">ช่วงนี้อยากฟังเพลงอารมณ์ไหน? (เลือกได้หลายอย่าง)</p>
+  <div class="chips">${Object.entries(MOODS).map(([k, v]) => `<span class="chip ${p.moods.includes(k) ? "on" : ""}" data-m="${k}" onclick="toggle(this)">${v}</span>`).join("")}</div>
+  <p class="mu">แนวเพลงที่ชอบ</p>
+  <div class="chips">${Object.entries(GENRES).map(([k, v]) => `<span class="chip ${p.genres.includes(k) ? "on" : ""}" data-g="${k}" onclick="toggle(this)">${v}</span>`).join("")}</div>
+  <p class="mu">ระดับพลังงาน (1 = นิ่ง ๆ, 5 = สุดมันส์)</p>
+  <input type="range" id="en" min="1" max="5" value="${p.energy}" style="width:100%">
+  <div class="err">${esc(msg)}</div><button onclick="saveProfile()">บันทึกและดูเพลงแนะนำ</button></div>`;
+        }
+        function recView() {
+            const u = me();
+            if (!u.profile) return quizView();
+            return `<div class="card"><h2>เพลงแนะนำสำหรับคุณ</h2><p class="mu">ยิ่งฟังมาก ระบบยิ่งเรียนรู้แนวที่คุณชอบ</p>${recommend(u).map(s => songRow(s)).join("")}</div>`;
+        }
+        function plView() {
+            const u = me();
+            return `<div class="card"><h2>เพลย์ลิสต์ของฉัน</h2>
+  <div class="acts" style="margin-bottom:10px"><input type="text" id="npl" placeholder="ชื่อเพลย์ลิสต์ใหม่" style="margin:0;flex:1"><button onclick="newPl()">สร้าง</button></div>
+  ${Object.entries(u.playlists).map(([n, ids]) => `<div class="card" style="margin-top:12px"><div class="top"><b>${esc(n)} (${ids.length})</b><button class="sm ghost" onclick="delPl(this.dataset.n)" data-n="${esc(n)}">ลบ</button></div>
+  ${ids.length ? ids.map((id, i) => songRow(byId(id), `<button class="sm" onclick="play(${id})">▶</button><button class="sm ghost" onclick="move(this.dataset.n,${i},-1)" data-n="${esc(n)}">↑</button><button class="sm ghost" onclick="move(this.dataset.n,${i},1)" data-n="${esc(n)}">↓</button><button class="sm ghost" onclick="rmFrom(this.dataset.n,${id})" data-n="${esc(n)}">✕</button>`)).join("") : '<p class="mu">ยังว่างอยู่ เพิ่มเพลงจากแท็บ “แนะนำ” หรือ “ทั้งหมด”</p>'}</div>`).join("")}</div>`;
+        }
+        function statView() {
+            const u = me(), ent = Object.entries(u.plays).sort((a, b) => b[1] - a[1]), max = ent[0] ? ent[0][1] : 1;
+            const tg = {}, tm = {}; ent.forEach(([id, n]) => { const s = byId(+id); tg[s.g] = (tg[s.g] || 0) + n; s.m.forEach(m => tm[m] = (tm[m] || 0) + n) });
+            const top = o => Object.entries(o).sort((a, b) => b[1] - a[1])[0];
+            const tgn = top(tg), tmn = top(tm);
+            return `<div class="card"><h2>สถิติการฟังของฉัน</h2>
+  ${ent.length ? `<p>แนวที่ฟังบ่อยสุด: <b>${GENRES[tgn[0]]}</b> · อารมณ์เด่น: <b>${MOODS[tmn[0]]}</b></p>
+  ${ent.map(([id, n]) => { const s = byId(+id); return `<div style="margin:10px 0"><div class="top"><span>${esc(s.t)} <small class="mu">– ${esc(s.a)}</small></span><b>${n} ครั้ง</b></div><div class="bar" style="width:${n / max * 100}%"></div></div>` }).join("")}`
+                    : '<p class="mu">ยังไม่มีประวัติ ลองกด ▶ ฟังเพลงดูนะ</p>'}</div>`;
+        }
+        function allView() { return `<div class="card"><h2>เพลงทั้งหมด</h2>${SONGS.map(s => songRow(s)).join("")}</div>` }
+        function appView() {
+            const T = { rec: ["แนะนำ", recView], all: ["ทั้งหมด", allView], pl: ["เพลย์ลิสต์", plView], st: ["สถิติ", statView], q: ["รสนิยม", quizView] };
+            return `<div class="top"><h1>🎧 MoodTune</h1><div class="acts">${me().pic ? `<img src="${esc(me().pic)}" alt="" width="28" height="28" style="border-radius:50%" referrerpolicy="no-referrer">` : ""}<span class="mu">สวัสดี ${esc(me().name || current)}</span><button class="sm ghost" onclick="logout()">ออกจากระบบ</button></div></div>
+  <div class="tabs">${Object.entries(T).map(([k, v]) => `<button class="${tab === k ? "on" : ""}" onclick="setTab('${k}')">${v[0]}</button>`).join("")}</div>${T[tab][1]()}`;
+        }
+        function render() {
+            if (current && !users[current]) current = null;
+            document.getElementById("app").innerHTML = current ? appView() : loginView();
+            if (!current) drawG();
+        }
+        render();
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="initGoogle()"></script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/th_TH/sdk.js"></script>
+</body>
+
+</html>
